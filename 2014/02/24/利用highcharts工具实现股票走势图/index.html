@@ -1,0 +1,989 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>利用HighCharts工具实现股票走势图 | Omii</title>
+  <meta name="author" content="Norsie的博客">
+  
+  <meta name="description" content="HighCharts是一个功能强大、开源、美观、图表丰富、兼容绝大多数浏览器的纯js图表库。你可以在它的官网看到相关的例子。
+因为项目需要，最近利用highcharts插件做了一个可以显示股票走势的图表。
+效果如下：
+
+代码如下：">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="利用HighCharts工具实现股票走势图"/>
+  <meta property="og:site_name" content="Omii"/>
+
+  
+    <meta property="og:image" content="undefined"/>
+  
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="Omii" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">Omii</a></h1>
+  <h2><a href="/">懂设计的码农</a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">首页</a></li>
+    
+      <li><a href="/archives">文章</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div></header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2014-02-24T06:44:53.000Z"><a href="/2014/02/24/利用highcharts工具实现股票走势图/">2月 24 2014</a></time>
+      
+      
+  
+    <h1 class="title">利用HighCharts工具实现股票走势图</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>HighCharts是一个功能强大、开源、美观、图表丰富、兼容绝大多数浏览器的纯js图表库。你可以在它的<a href="http://www.highcharts.com/" title="highcharts官网" target="_blank">官网</a>看到相关的例子。</p>
+<p>因为项目需要，最近利用highcharts插件做了一个可以显示股票走势的图表。</p>
+<p>效果如下：</p>
+<p><a href="http://omii-wordpress.stor.sinaapp.com/uploads/2014/02/QQ20140224-1@2x11.png" target="_blank"><img src="http://omii-wordpress.stor.sinaapp.com/uploads/2014/02/QQ20140224-1@2x11.png" alt="QQ20140224-1@2x.png"></a></p>
+<p>代码如下：
+<a id="more"></a></p>
+<p><pre class="brush: javascript; gutter: true">/<em>*格式化数字为一个定长的字符串，前面补０ 
+</em>参数: </p>
+<ul>
+<li>Source 待格式化的字符串 </li>
+<li>Length 需要得到的字符串的长度 
+*/
+function FormatNum(Source, Length) {
+  var strTemp = &quot;&quot;;
+  for (var i = 1; i &lt;= Length - Source.length; i++) {<pre><code>  strTemp += &amp;quot;0&amp;quot;;
+</code></pre>  }
+  return strTemp + Source;
+}</li>
+</ul>
+<p>function creatChart() {</p>
+<pre><code>var chart = null;
+var x_arr = [];
+var y_arr = [];
+var orginPrice = 6.82;
+var ymax = orginPrice * (1 + 0.1);
+var ymin = orginPrice * (1 - 0.1);
+var ystep = orginPrice * (1 + 0.05);
+var total_point = 240;/**一共的点数**/
+var current_point = 0;/**当前的点数**/
+var TIMEOUT = 1000;/**间隔多久获取一次数据**/
+
+function loadTime() {
+    window.setTimeout(getData, TIMEOUT);
+}
+
+function setXArr() {
+    var hour = 9;
+    var minutes = 30;
+    var xArr = null;
+    for (var i = hour; i &amp;lt; 15; i++) {
+        if (i == 12) continue;
+        while (minutes &amp;lt; 60) {
+            if (i == 11 &amp;amp;&amp;amp; minutes &amp;gt;= 30) {
+                break;
+            }
+            if (i == 13 &amp;amp;&amp;amp; minutes == 0) {
+                x_arr.push(&amp;#039;11:30/13:00&amp;#039;);
+                minutes++;
+                continue;
+            }
+            xArr = FormatNum(i + &amp;quot;&amp;quot;, 2) + &amp;quot;:&amp;quot; + FormatNum(minutes + &amp;quot;&amp;quot;, 2);
+            x_arr.push(xArr);
+            minutes++;
+            if (minutes == 60) {
+                break;
+            }
+        }
+        minutes = 0;
+    }
+    x_arr.push(&amp;#039;15:00&amp;#039;);
+
+}
+
+/**根据昨天收盘价格计算今天的涨跌区间**/
+function setYArr() {
+    var orginData = orginPrice;
+    y_arr.push((orginData * (1 - 0.1)).toFixed(2));
+    y_arr.push((orginData * (1 - 0.05)).toFixed(2));
+    y_arr.push(orginData + &amp;#039;&amp;#039;);
+    y_arr.push((orginData * (1 + 0.05)).toFixed(2));
+    y_arr.push((orginData * (1 + 0.1)).toFixed(2));
+}
+
+/**获取第一次数据**/
+function getFirstData() {
+    var data = [];
+    var y_mx = Math.random() * (orginPrice * (1 + 0.1) - orginPrice * (1 - 0.1)) + orginPrice * (1 - 0.1);
+    var i;
+
+    for (i = 0; i &amp;lt;= 0; i++) {
+        data.push({
+            x: current_point,
+            y: y_mx
+        });
+        if (current_point &amp;lt;= total_point) {
+            current_point++;
+        }
+    }
+    return data;
+}
+
+/**更新数据**/
+function getData() {
+    var current_x = x_arr[current_point];
+
+    //获取最大值
+    var series_mx = chart.series[0];
+    var y_mx = Math.random() * (orginPrice * (1 + 0.1) - orginPrice * (1 - 0.1)) + orginPrice * (1 - 0.1);
+
+    series_mx.addPoint([current_point, y_mx], true, false);
+
+    current_point++;
+
+    if (current_point &amp;lt;= total_point) {
+        window.setTimeout(getData, TIMEOUT);
+    }
+}
+
+/**绘制图表**/
+$(function() {
+    $(document).ready(function() {
+        setXArr();
+        setYArr();
+
+        chart = new Highcharts.Chart({
+            chart: {
+                renderTo: &amp;#039;trend&amp;#039;,
+                /**目标区域**/
+                type: &amp;#039;line&amp;#039;,
+                marginTop: 30,
+                marginBottom: 30,
+                marginLeft: 60,
+                marginRight: 60,
+                events: {
+                    load: loadTime
+                }
+            },
+            credits: {
+                enabled: false //不显示highCharts版权信息
+            },
+            title: {
+                text: &amp;#039;&amp;#039;,
+                enabled: false
+            },
+            subtitle: {
+                enabled: false
+            },
+            xAxis: {
+                /*                 type:&amp;quot;datetime&amp;quot;, */
+                categories: x_arr,
+                /**刻度集合**/
+                /* tickInterval:1000*60, */
+                /**数据刻度 1分钟  每60s请求一次数据**/
+                max: total_point,
+                /**以每分钟取一次记录算，股市交易时间一共241个点**/
+                min: 0,
+                /**显示的坐标**/
+                tickPositions: [0, 60, 120, 180, 240],
+            },
+            yAxis: [{
+                /*  categories:y_arr, */
+                tickmarkPlacement: &amp;#039;on&amp;#039;,
+                /**数值显示在刻度上还是中间**/
+                max: ymax,
+                min: ymin,
+                step: ystep,
+                showFirstLabel: true,
+                title: {
+                    enabled: false
+                },
+                allowDecimals: true,
+                labels: {
+                    formatter: function() {
+                        if (this.value &amp;gt; orginPrice) {
+                            return &amp;#039;&amp;lt;span style=&amp;quot;fill: red;&amp;quot;&amp;gt;&amp;#039; + Highcharts.numberFormat(this.value, 2, &amp;#039;.&amp;#039;) + &amp;#039;&amp;lt;/span&amp;gt;&amp;#039;;
+                        } else if (this.value &amp;lt; orginPrice) {
+                            return &amp;#039;&amp;lt;span style=&amp;quot;fill: green;&amp;quot;&amp;gt;&amp;#039; + Highcharts.numberFormat(this.value, 2, &amp;#039;.&amp;#039;) + &amp;#039;&amp;lt;/span&amp;gt;&amp;#039;;
+                        } else if (this.value = orginPrice) {
+                            return &amp;#039;&amp;lt;span style=&amp;quot;fill: black;&amp;quot;&amp;gt;&amp;#039; + Highcharts.numberFormat(this.value, 2, &amp;#039;.&amp;#039;) + &amp;#039;&amp;lt;/span&amp;gt;&amp;#039;;
+                        } else {
+                            return this.value;
+                        }
+                    }
+                }
+            },
+            {
+                /*  categories:y_arr, */
+                tickmarkPlacement: &amp;#039;on&amp;#039;,
+                /**数值显示在刻度上还是中间**/
+                max: ymax.toFixed(2),
+                min: ymin.toFixed(2),
+                step: ystep,
+                showFirstLabel: true,
+                title: {
+                    enabled: false
+                },
+                allowDecimals: true,
+                opposite: true,
+                /**该条y轴是反向的，即位于右边**/
+                labels: {
+                    formatter: function() {
+                        if (this.value &amp;gt; orginPrice) {
+                            return &amp;#039;&amp;lt;span style=&amp;quot;fill: red;&amp;quot;&amp;gt;&amp;#039; + &amp;#039;+&amp;#039; + Highcharts.numberFormat((this.value / orginPrice - 1) * 100, 2, &amp;#039;.&amp;#039;) + &amp;#039;%&amp;#039; + &amp;#039;&amp;lt;/span&amp;gt;&amp;#039;;
+                        } else if (this.value &amp;lt; orginPrice) {
+                            return &amp;#039;&amp;lt;span style=&amp;quot;fill: green;&amp;quot;&amp;gt;&amp;#039; + &amp;#039;-&amp;#039; + Highcharts.numberFormat((1 - this.value / orginPrice) * 100, 2, &amp;#039;.&amp;#039;) + &amp;#039;%&amp;#039; + &amp;#039;&amp;lt;/span&amp;gt;&amp;#039;;
+                        } else if (this.value = orginPrice) {
+                            return &amp;#039;&amp;lt;span style=&amp;quot;fill: black;&amp;quot;&amp;gt;&amp;#039; + &amp;#039;+&amp;#039; + Highcharts.numberFormat((1 - this.value / orginPrice) * 100, 2, &amp;#039;.&amp;#039;) + &amp;#039;%&amp;#039; + &amp;#039;&amp;lt;/span&amp;gt;&amp;#039;;
+                        } else {
+                            return this.value;
+                        }
+                    }
+                }
+
+            }],
+            tooltip: {
+                formatter: function() {
+                    var drift;
+                    if (this.y &amp;gt; orginPrice) {
+                        drift = &amp;#039;&amp;lt;span style=&amp;quot;fill: red;&amp;quot;&amp;gt;&amp;#039; + &amp;#039;+&amp;#039; + Highcharts.numberFormat((this.y / orginPrice - 1) * 100, 2, &amp;#039;.&amp;#039;) + &amp;#039;%&amp;#039; + &amp;#039;&amp;lt;/span&amp;gt;&amp;#039;;
+                    } else if (this.y &amp;lt; orginPrice) {
+                        drift = &amp;#039;&amp;lt;span style=&amp;quot;fill: green;&amp;quot;&amp;gt;&amp;#039; + &amp;#039;-&amp;#039; + Highcharts.numberFormat((1 - this.y / orginPrice) * 100, 2, &amp;#039;.&amp;#039;) + &amp;#039;%&amp;#039; + &amp;#039;&amp;lt;/span&amp;gt;&amp;#039;;
+                    } else if (this.y = orginPrice) {
+                        drift = &amp;#039;&amp;lt;span style=&amp;quot;fill: black;&amp;quot;&amp;gt;&amp;#039; + &amp;#039;+&amp;#039; + Highcharts.numberFormat((1 - this.y / orginPrice) * 100, 2, &amp;#039;.&amp;#039;) + &amp;#039;%&amp;#039; + &amp;#039;&amp;lt;/span&amp;gt;&amp;#039;;
+                    } else {
+                        drift = this.y;
+                    }
+
+                    return &amp;#039;&amp;lt;b&amp;gt;&amp;#039; + this.series.name + &amp;#039;  &amp;#039; + this.x + &amp;#039;&amp;lt;/b&amp;gt;&amp;lt;br/&amp;gt;&amp;#039; + &amp;#039;   开盘：&amp;#039; + orginPrice + &amp;#039;  价格：&amp;#039; + Highcharts.numberFormat(this.y, 2, &amp;#039;.&amp;#039;) + &amp;#039;  涨幅：&amp;#039; + drift;
+                }
+            },
+            legend: {
+                /**图例**/
+
+                enabled: false
+            },
+            plotOptions: {
+                /**填充颜色**/
+                line: {
+
+                    lineWidth: 1,
+                    marker: {
+                        radius: 1,
+                        enabled: false
+                    },
+                    shadow: true,
+                    states: {
+                        hover: {
+                            lineWidth: 1
+                        }
+                    },
+                    threshold: null
+                }
+            },
+            exporting: {
+                /**是否允许输出**/
+                enabled: false
+            },
+
+            series: [
+            {
+                name: Highcharts.dateFormat(&amp;#039;%Y-%m-%d&amp;#039;, new Date()),
+                type: &amp;#039;line&amp;#039;,
+                data: []
+            }]
+        });
+    });
+    $(&amp;quot;#btn-today&amp;quot;).addClass(&amp;quot;active&amp;quot;);
+    $(&amp;quot;#btn-week&amp;quot;).removeClass(&amp;quot;active&amp;quot;);
+    $(&amp;quot;#btn-month&amp;quot;).removeClass(&amp;quot;active&amp;quot;);
+    $(&amp;quot;#btn-week&amp;quot;).click(function() {
+        creatChartForWeek();
+    });
+    $(&amp;quot;#btn-month&amp;quot;).click(function() {
+        creatChartForMonth();
+    });
+});
+</code></pre><p>}</p>
+<p>/<strong>图表-周视图</strong>/
+function creatChartForWeek() {</p>
+<pre><code>var chart;
+var x_arr = [];
+var y_arr = [];
+var orginPrice = 6.82;
+var ymax = orginPrice * (1 + 0.1);
+var ymin = orginPrice * (1 - 0.1);
+var ystep = orginPrice * (1 + 0.05);
+var total_point = 240 * 5;
+/**每天240个点，一共5天，外加4个空数据点用来分割天**/
+/**一共的点数**/
+var current_point = 0;
+/**当前的点数**/
+var TIMEOUT = 1000;
+/**间隔多久获取一次数据**/
+
+function loadTime() {
+    window.setTimeout(getData, TIMEOUT);
+}
+
+function setXArr() {
+    var today = new Date(
+    /* 2014, 2, 3 */
+    ); //定义当天日期对象 
+    var year = today.getFullYear(); //获取年份 
+    var month = today.getMonth(); //获取月份 
+    var date = today.getDate(); //获取日期值 
+    var nextDay;
+    var str;
+    /**需要计算的天数**/
+    var day = 5;
+    /**需要计算的天数**/
+    var hour = 9;
+    var minutes = 59;
+    var xArr;
+    var change = 0;
+    while (day != change) {
+        try {
+            nextDay = new Date(year, month, date - change);
+            if (nextDay.getDay() &amp;gt;= 1 &amp;amp;&amp;amp; nextDay.getDay() &amp;lt;= 5) {
+                str = nextDay.getFullYear() + &amp;quot;-&amp;quot; + FormatNum((nextDay.getMonth() + 1) + &amp;quot;&amp;quot;, 2) + &amp;quot;-&amp;quot; + FormatNum(nextDay.getDate() + &amp;quot;&amp;quot;, 2) + &amp;quot; &amp;quot;;
+            } else if (nextDay.getDay() == 6 || nextDay.getDay() == 0) {
+                day++;
+                change++;
+                continue;
+            }
+        } catch(e) {
+            var str = &amp;quot;&amp;quot;;
+            alert(e.message);
+        }
+        change++;
+        x_arr.push(&amp;quot;&amp;quot; + str + &amp;#039;15:00&amp;#039;);
+        for (var i = 14; i &amp;gt;= hour; i--) {
+            if (i == 12) continue;
+            while (minutes &amp;gt;= 0) {
+                if (i == 11 &amp;amp;&amp;amp; minutes &amp;gt; 30) {
+                    minutes--;
+                    continue;
+                }
+                if (i == 9 &amp;amp;&amp;amp; minutes &amp;lt; 30) {
+                    break;
+                }
+                if (i == 13 &amp;amp;&amp;amp; minutes == 0) {
+                    x_arr.push(&amp;quot;&amp;quot; + str + &amp;#039;13:00&amp;#039;);
+                    minutes--;
+                    continue;
+                }
+                xArr = &amp;quot;&amp;quot; + str + FormatNum(i + &amp;quot;&amp;quot;, 2) + &amp;quot;:&amp;quot; + FormatNum(minutes + &amp;quot;&amp;quot;, 2);
+                x_arr.push(xArr);
+                minutes--;
+
+            }
+            minutes = 59;
+        }
+
+    }
+    /**数组反转**/
+    x_arr.reverse();
+
+}
+
+/**根据昨天收盘价格计算今天的涨跌区间**/
+function setYArr() {
+    var orginData = orginPrice;
+    y_arr.push((orginData * (1 - 0.1)).toFixed(2));
+    y_arr.push((orginData * (1 - 0.05)).toFixed(2));
+    y_arr.push(orginData + &amp;#039;&amp;#039;);
+    y_arr.push((orginData * (1 + 0.05)).toFixed(2));
+    y_arr.push((orginData * (1 + 0.1)).toFixed(2));
+}
+
+/**获取第一次数据**/
+function getFirstData() {
+    var data = [];
+    var y_mx = Math.random() * (orginPrice * (1 + 0.1) - orginPrice * (1 - 0.1)) + orginPrice * (1 - 0.1);
+    var i;
+
+    for (i = 0; i &amp;lt;= 0; i++) {
+        data.push({
+            x: current_point,
+            y: y_mx
+        });
+        if (current_point &amp;lt;= total_point) {
+            current_point++;
+        }
+    }
+    return data;
+}
+
+/**更新数据**/
+function getData() {
+    var current_x = x_arr[current_point];
+
+    //获取最大值
+    var series_mx = chart.series[0];
+    var y_mx = Math.random() * (orginPrice * (1 + 0.1) - orginPrice * (1 - 0.1)) + orginPrice * (1 - 0.1);
+
+    series_mx.addPoint([current_point, y_mx], true, false);
+
+    current_point++;
+
+    if (current_point &amp;lt;= total_point) {
+        window.setTimeout(getData, TIMEOUT);
+    }
+}
+
+/**绘制图表**/
+$(function() {
+    $(document).ready(function() {
+        setXArr();
+        setYArr();
+
+        chart = new Highcharts.Chart({
+            chart: {
+                renderTo: &amp;#039;trend&amp;#039;,
+                /**目标区域**/
+                type: &amp;#039;line&amp;#039;,
+                marginTop: 30,
+                marginBottom: 30,
+                marginLeft: 60,
+                marginRight: 60,
+                events: {
+                    load: loadTime
+                }
+            },
+            credits: {
+                enabled: false //不显示highCharts版权信息
+            },
+            title: {
+                text: &amp;#039;&amp;#039;,
+                enabled: false
+            },
+            subtitle: {
+                enabled: false
+            },
+            xAxis: {
+                /*                 type:&amp;quot;datetime&amp;quot;, */
+                categories: x_arr,
+                /**刻度集合**/
+                /* tickInterval:1000*60, */
+                /**数据刻度 1分钟  每60s请求一次数据**/
+                max: total_point,
+                /**以每分钟取一次记录算，股市交易时间一共241个点**/
+                min: 0,
+                /**显示的坐标**/
+                tickPositions: [120, 360, 600, 840, 1080],
+                /**数值显示在刻度上还是中间**/
+                labels: {
+                    formatter: function() {
+                        return (this.value).substring(0, 10);
+                    }
+                }
+
+            },
+            yAxis: [{
+                /*  categories:y_arr, */
+                tickmarkPlacement: &amp;#039;on&amp;#039;,
+                /**数值显示在刻度上还是中间**/
+                max: ymax,
+                min: ymin,
+                step: ystep,
+                showFirstLabel: true,
+                title: {
+                    enabled: false
+                },
+                allowDecimals: true,
+                labels: {
+                    formatter: function() {
+                        if (this.value &amp;gt; orginPrice) {
+                            return &amp;#039;&amp;lt;span style=&amp;quot;fill: red;&amp;quot;&amp;gt;&amp;#039; + Highcharts.numberFormat(this.value, 2, &amp;#039;.&amp;#039;) + &amp;#039;&amp;lt;/span&amp;gt;&amp;#039;;
+                        } else if (this.value &amp;lt; orginPrice) {
+                            return &amp;#039;&amp;lt;span style=&amp;quot;fill: green;&amp;quot;&amp;gt;&amp;#039; + Highcharts.numberFormat(this.value, 2, &amp;#039;.&amp;#039;) + &amp;#039;&amp;lt;/span&amp;gt;&amp;#039;;
+                        } else if (this.value = orginPrice) {
+                            return &amp;#039;&amp;lt;span style=&amp;quot;fill: black;&amp;quot;&amp;gt;&amp;#039; + Highcharts.numberFormat(this.value, 2, &amp;#039;.&amp;#039;) + &amp;#039;&amp;lt;/span&amp;gt;&amp;#039;;
+                        } else {
+                            return this.value;
+                        }
+                    }
+                }
+            },
+            {
+                /*  categories:y_arr, */
+                tickmarkPlacement: &amp;#039;on&amp;#039;,
+                /**数值显示在刻度上还是中间**/
+                max: ymax.toFixed(2),
+                min: ymin.toFixed(2),
+                step: ystep,
+                showFirstLabel: true,
+                title: {
+                    enabled: false
+                },
+                allowDecimals: true,
+                opposite: true,
+                /**该条y轴是反向的，即位于右边**/
+                labels: {
+                    formatter: function() {
+                        if (this.value &amp;gt; orginPrice) {
+                            return &amp;#039;&amp;lt;span style=&amp;quot;fill: red;&amp;quot;&amp;gt;&amp;#039; + &amp;#039;+&amp;#039; + Highcharts.numberFormat((this.value / orginPrice - 1) * 100, 2, &amp;#039;.&amp;#039;) + &amp;#039;%&amp;#039; + &amp;#039;&amp;lt;/span&amp;gt;&amp;#039;;
+                        } else if (this.value &amp;lt; orginPrice) {
+                            return &amp;#039;&amp;lt;span style=&amp;quot;fill: green;&amp;quot;&amp;gt;&amp;#039; + &amp;#039;-&amp;#039; + Highcharts.numberFormat((1 - this.value / orginPrice) * 100, 2, &amp;#039;.&amp;#039;) + &amp;#039;%&amp;#039; + &amp;#039;&amp;lt;/span&amp;gt;&amp;#039;;
+                        } else if (this.value = orginPrice) {
+                            return &amp;#039;&amp;lt;span style=&amp;quot;fill: black;&amp;quot;&amp;gt;&amp;#039; + &amp;#039;+&amp;#039; + Highcharts.numberFormat((1 - this.value / orginPrice) * 100, 2, &amp;#039;.&amp;#039;) + &amp;#039;%&amp;#039; + &amp;#039;&amp;lt;/span&amp;gt;&amp;#039;;
+                        } else {
+                            return this.value;
+                        }
+                    }
+                }
+
+            }],
+            tooltip: {
+                formatter: function() {
+                    var drift;
+                    if (this.y &amp;gt; orginPrice) {
+                        drift = &amp;#039;&amp;lt;span style=&amp;quot;fill: red;&amp;quot;&amp;gt;&amp;#039; + &amp;#039;+&amp;#039; + Highcharts.numberFormat((this.y / orginPrice - 1) * 100, 2, &amp;#039;.&amp;#039;) + &amp;#039;%&amp;#039; + &amp;#039;&amp;lt;/span&amp;gt;&amp;#039;;
+                    } else if (this.y &amp;lt; orginPrice) {
+                        drift = &amp;#039;&amp;lt;span style=&amp;quot;fill: green;&amp;quot;&amp;gt;&amp;#039; + &amp;#039;-&amp;#039; + Highcharts.numberFormat((1 - this.y / orginPrice) * 100, 2, &amp;#039;.&amp;#039;) + &amp;#039;%&amp;#039; + &amp;#039;&amp;lt;/span&amp;gt;&amp;#039;;
+                    } else if (this.y = orginPrice) {
+                        drift = &amp;#039;&amp;lt;span style=&amp;quot;fill: black;&amp;quot;&amp;gt;&amp;#039; + &amp;#039;+&amp;#039; + Highcharts.numberFormat((1 - this.y / orginPrice) * 100, 2, &amp;#039;.&amp;#039;) + &amp;#039;%&amp;#039; + &amp;#039;&amp;lt;/span&amp;gt;&amp;#039;;
+                    } else {
+                        drift = this.y;
+                    }
+
+                    return &amp;#039;&amp;lt;b&amp;gt;&amp;#039; + this.series.name + &amp;#039;  &amp;#039; + this.x + &amp;#039;&amp;lt;/b&amp;gt;&amp;lt;br/&amp;gt;&amp;#039; + &amp;#039;   开盘：&amp;#039; + orginPrice + &amp;#039;  价格：&amp;#039; + Highcharts.numberFormat(this.y, 2, &amp;#039;.&amp;#039;) + &amp;#039;  涨幅：&amp;#039; + drift;
+                }
+            },
+            legend: {
+                /**图例**/
+
+                enabled: false
+            },
+            plotOptions: {
+                /**填充颜色**/
+                line: {
+                                           lineWidth: 0.5,
+                    marker: {
+                        radius: 1,
+                        enabled: false
+                    },
+                    states: {
+                        hover: {
+                            lineWidth: 0.5
+                        }
+                    },
+                    threshold: null
+                }
+            },
+            exporting: {
+                /**是否允许输出**/
+                enabled: false
+            },
+
+            series: [                {
+                name: &amp;quot;|&amp;quot;,
+                type: &amp;#039;line&amp;#039;,
+                data: []
+            }]
+        });
+    });
+    $(&amp;quot;#btn-today&amp;quot;).removeClass(&amp;quot;active&amp;quot;);
+    $(&amp;quot;#btn-week&amp;quot;).addClass(&amp;quot;active&amp;quot;);
+    $(&amp;quot;#btn-month&amp;quot;).removeClass(&amp;quot;active&amp;quot;);
+    $(&amp;quot;#btn-today&amp;quot;).click(function() {
+        creatChart();
+    });
+    $(&amp;quot;#btn-month&amp;quot;).click(function() {
+        creatChartForMonth();
+    });
+});
+</code></pre><p>}</p>
+<p>/<strong>图表-月视图</strong>/
+function creatChartForMonth() {</p>
+<pre><code>var chart;
+var x_arr = [];
+var y_arr = [];
+var orginPrice = 6.82;
+var ymax = orginPrice * (1 + 0.1);
+var ymin = orginPrice * (1 - 0.1);
+var ystep = orginPrice * (1 + 0.05);
+var total_point = 30;
+/**一共30天，外加4个空数据点用来分割星期**/
+/**一共的点数**/
+var current_point = 0;
+/**当前的点数**/
+var TIMEOUT = 1000;
+/**间隔多久获取一次数据**/
+
+function loadTime() {
+    window.setTimeout(getData, TIMEOUT);
+}
+
+function setXArr() {
+    var today = new Date(
+    /* 2014, 2, 3 */
+    ); //定义当天日期对象 
+    var year = today.getFullYear(); //获取年份 
+    var month = today.getMonth(); //获取月份 
+    var date = today.getDate(); //获取日期值 
+    var nextDay;
+    var str;
+    /**需要计算的天数**/
+    var day = 30;
+    var change = 0;
+    while (day != change) {
+        try {
+            nextDay = new Date(year, month, date - change);
+            if (nextDay.getDay() &amp;gt;= 1 &amp;amp;&amp;amp; nextDay.getDay() &amp;lt;= 5) {
+                str = nextDay.getFullYear() + &amp;quot;-&amp;quot; + FormatNum((nextDay.getMonth() + 1) + &amp;quot;&amp;quot;, 2) + &amp;quot;-&amp;quot; + FormatNum(nextDay.getDate() + &amp;quot;&amp;quot;, 2) + &amp;quot; &amp;quot;;
+            } else if (nextDay.getDay() == 6 || nextDay.getDay() == 0) {
+                day++;
+                change++;
+                continue;
+            }
+        } catch(e) {
+            var str = &amp;quot;&amp;quot;;
+            alert(e.message);
+        }
+        x_arr.push(str);
+        change++;
+    }
+    /**数组反转**/
+    x_arr.reverse();
+}
+
+/**根据昨天收盘价格计算今天的涨跌区间**/
+function setYArr() {
+    var orginData = orginPrice;
+    y_arr.push((orginData * (1 - 0.1)).toFixed(2));
+    y_arr.push((orginData * (1 - 0.05)).toFixed(2));
+    y_arr.push(orginData + &amp;#039;&amp;#039;);
+    y_arr.push((orginData * (1 + 0.05)).toFixed(2));
+    y_arr.push((orginData * (1 + 0.1)).toFixed(2));
+}
+
+/**获取第一次数据**/
+function getFirstData() {
+    var data = [];
+    var y_mx = Math.random() * (orginPrice * (1 + 0.1) - orginPrice * (1 - 0.1)) + orginPrice * (1 - 0.1);
+    var i;
+
+    for (i = 0; i &amp;lt;= 0; i++) {
+        data.push({
+            x: current_point,
+            y: y_mx
+        });
+        if (current_point &amp;lt;= total_point) {
+            current_point++;
+        }
+    }
+    return data;
+}
+
+/**更新数据**/
+function getData() {
+    var current_x = x_arr[current_point];
+
+    //获取最大值
+    var series_mx = chart.series[0];
+    var y_mx = Math.random() * (orginPrice * (1 + 0.1) - orginPrice * (1 - 0.1)) + orginPrice * (1 - 0.1);
+
+    series_mx.addPoint([current_point, y_mx], true, false);
+
+    current_point++;
+
+    if (current_point &amp;lt;= total_point) {
+        window.setTimeout(getData, TIMEOUT);
+    }
+}
+
+/**绘制图标**/
+$(function() {
+    $(document).ready(function() {
+        setXArr();
+        setYArr();
+
+        chart = new Highcharts.Chart({
+            chart: {
+                renderTo: &amp;#039;trend&amp;#039;,
+                /**目标区域**/
+                type: &amp;#039;line&amp;#039;,
+                marginTop: 30,
+                marginBottom: 30,
+                marginLeft: 60,
+                marginRight: 60,
+                events: {
+                    load: loadTime
+                }
+            },
+            credits: {
+                enabled: false //不显示highCharts版权信息
+            },
+            title: {
+                text: &amp;#039;&amp;#039;,
+                enabled: false
+            },
+            subtitle: {
+                enabled: false
+            },
+            xAxis: {
+                /*                 type:&amp;quot;datetime&amp;quot;, */
+                /**刻度集合**/
+                categories: x_arr,
+                /**数据刻度 1分钟  每60s请求一次数据**/
+                /* tickInterval:1000*60, */
+                /**总共的点数**/
+                max: total_point,
+                min: 0,
+                /**显示的坐标**/
+                tickPositions: [3, 9, 15, 21, 27],
+
+            },
+            yAxis: [{
+                /*  categories:y_arr, */
+                tickmarkPlacement: &amp;#039;on&amp;#039;,
+                /**数值显示在刻度上还是中间**/
+                max: ymax,
+                min: ymin,
+                step: ystep,
+                showFirstLabel: true,
+                title: {
+                    enabled: false
+                },
+                allowDecimals: true,
+                labels: {
+                    formatter: function() {
+                        if (this.value &amp;gt; orginPrice) {
+                            return &amp;#039;&amp;lt;span style=&amp;quot;fill: red;&amp;quot;&amp;gt;&amp;#039; + Highcharts.numberFormat(this.value, 2, &amp;#039;.&amp;#039;) + &amp;#039;&amp;lt;/span&amp;gt;&amp;#039;;
+                        } else if (this.value &amp;lt; orginPrice) {
+                            return &amp;#039;&amp;lt;span style=&amp;quot;fill: green;&amp;quot;&amp;gt;&amp;#039; + Highcharts.numberFormat(this.value, 2, &amp;#039;.&amp;#039;) + &amp;#039;&amp;lt;/span&amp;gt;&amp;#039;;
+                        } else if (this.value = orginPrice) {
+                            return &amp;#039;&amp;lt;span style=&amp;quot;fill: black;&amp;quot;&amp;gt;&amp;#039; + Highcharts.numberFormat(this.value, 2, &amp;#039;.&amp;#039;) + &amp;#039;&amp;lt;/span&amp;gt;&amp;#039;;
+                        } else {
+                            return this.value;
+                        }
+                    }
+                }
+            },
+            {
+                /*  categories:y_arr, */
+                tickmarkPlacement: &amp;#039;on&amp;#039;,
+                /**数值显示在刻度上还是中间**/
+                max: (orginPrice * (1 + 0.1)).toFixed(2),
+                min: (orginPrice * (1 - 0.1)).toFixed(2),
+                step: orginPrice * (1 + 0.05),
+                showFirstLabel: true,
+                title: {
+                    enabled: false
+                },
+                allowDecimals: true,
+                opposite: true,
+                /**该条y轴是反向的，即位于右边**/
+                labels: {
+                    formatter: function() {
+                        if (this.value &amp;gt; orginPrice) {
+                            return &amp;#039;&amp;lt;span style=&amp;quot;fill: red;&amp;quot;&amp;gt;&amp;#039; + &amp;#039;+&amp;#039; + Highcharts.numberFormat((this.value / orginPrice - 1) * 100, 2, &amp;#039;.&amp;#039;) + &amp;#039;%&amp;#039; + &amp;#039;&amp;lt;/span&amp;gt;&amp;#039;;
+                        } else if (this.value &amp;lt; orginPrice) {
+                            return &amp;#039;&amp;lt;span style=&amp;quot;fill: green;&amp;quot;&amp;gt;&amp;#039; + &amp;#039;-&amp;#039; + Highcharts.numberFormat((1 - this.value / orginPrice) * 100, 2, &amp;#039;.&amp;#039;) + &amp;#039;%&amp;#039; + &amp;#039;&amp;lt;/span&amp;gt;&amp;#039;;
+                        } else if (this.value = orginPrice) {
+                            return &amp;#039;&amp;lt;span style=&amp;quot;fill: black;&amp;quot;&amp;gt;&amp;#039; + &amp;#039;+&amp;#039; + Highcharts.numberFormat((1 - this.value / orginPrice) * 100, 2, &amp;#039;.&amp;#039;) + &amp;#039;%&amp;#039; + &amp;#039;&amp;lt;/span&amp;gt;&amp;#039;;
+                        } else {
+                            return this.value;
+                        }
+                    }
+                }
+
+            }],
+            tooltip: {
+                formatter: function() {
+                    var drift;
+                    if (this.y &amp;gt; orginPrice) {
+                        drift = &amp;#039;&amp;lt;span style=&amp;quot;fill: red;&amp;quot;&amp;gt;&amp;#039; + &amp;#039;+&amp;#039; + Highcharts.numberFormat((this.y / orginPrice - 1) * 100, 2, &amp;#039;.&amp;#039;) + &amp;#039;%&amp;#039; + &amp;#039;&amp;lt;/span&amp;gt;&amp;#039;;
+                    } else if (this.y &amp;lt; orginPrice) {
+                        drift = &amp;#039;&amp;lt;span style=&amp;quot;fill: green;&amp;quot;&amp;gt;&amp;#039; + &amp;#039;-&amp;#039; + Highcharts.numberFormat((1 - this.y / orginPrice) * 100, 2, &amp;#039;.&amp;#039;) + &amp;#039;%&amp;#039; + &amp;#039;&amp;lt;/span&amp;gt;&amp;#039;;
+                    } else if (this.y = orginPrice) {
+                        drift = &amp;#039;&amp;lt;span style=&amp;quot;fill: black;&amp;quot;&amp;gt;&amp;#039; + &amp;#039;+&amp;#039; + Highcharts.numberFormat((1 - this.y / orginPrice) * 100, 2, &amp;#039;.&amp;#039;) + &amp;#039;%&amp;#039; + &amp;#039;&amp;lt;/span&amp;gt;&amp;#039;;
+                    } else {
+                        drift = this.y;
+                    }
+
+                    return &amp;#039;&amp;lt;b&amp;gt;&amp;#039; + this.series.name + &amp;#039;  &amp;#039; + this.x + &amp;#039;&amp;lt;/b&amp;gt;&amp;lt;br/&amp;gt;&amp;#039; + &amp;#039;   开盘：&amp;#039; + orginPrice + &amp;#039;  价格：&amp;#039; + Highcharts.numberFormat(this.y, 2, &amp;#039;.&amp;#039;) + &amp;#039;  涨幅：&amp;#039; + drift;
+                }
+            },
+            legend: {
+                /**图例**/
+
+                enabled: false
+            },
+            plotOptions: {
+                /**填充颜色**/
+                line: {
+                                            lineWidth: 0.5,
+                    marker: {
+                        radius: 1,
+                        enabled: false
+                    },
+                    states: {
+                        hover: {
+                            lineWidth: 0.5
+                        }
+                    },
+                    threshold: null
+                }
+            },
+            exporting: {
+                /**是否允许输出**/
+                enabled: false
+            },
+
+            series: [                {
+                name: &amp;#039;|&amp;#039;,
+                type: &amp;#039;line&amp;#039;,
+                data: []
+            }]
+        });
+    });
+    $(&amp;quot;#btn-today&amp;quot;).removeClass(&amp;quot;active&amp;quot;);
+    $(&amp;quot;#btn-week&amp;quot;).removeClass(&amp;quot;active&amp;quot;);
+    $(&amp;quot;#btn-month&amp;quot;).addClass(&amp;quot;active&amp;quot;);
+    $(&amp;quot;#btn-today&amp;quot;).click(function() {
+        creatChart();
+    });
+    $(&amp;quot;#btn-week&amp;quot;).click(function() {
+        creatChartForWeek();
+    });
+});
+</code></pre><p>}</pre>
+&nbsp;</p>
+
+      
+    </div>
+    <footer>
+      
+        
+  
+  <div class="categories">
+    <a href="/categories/技术/">技术</a>
+  </div>
+
+        
+  
+  <div class="tags">
+    <a href="/tags/JavaScript/">JavaScript</a>
+  </div>
+
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+<section id="comment">
+<!-- Duoshuo Comment BEGIN -->
+  <div class="ds-thread"></div>
+<script type="text/javascript">
+var duoshuoQuery = {short_name:"omii"};
+  (function() {
+    var ds = document.createElement('script');
+    ds.type = 'text/javascript';ds.async = true;
+    ds.src = 'http://static.duoshuo.com/embed.js';
+    ds.charset = 'UTF-8';
+    (document.getElementsByTagName('head')[0] 
+    || document.getElementsByTagName('body')[0]).appendChild(ds);
+  })();
+  </script>
+<!-- Duoshuo Comment END -->
+</section>
+
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="搜索">
+    <input type="hidden" name="q" value="site:yoursite.com">
+  </form>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">分类</h3>
+  <ul class="entry">
+  
+    <li><a href="/categories/分享/">分享</a><small>1</small></li>
+  
+    <li><a href="/categories/技术/">技术</a><small>1</small></li>
+  
+    <li><a href="/categories/私人/">私人</a><small>3</small></li>
+  
+    <li><a href="/categories/设计/">设计</a><small>6</small></li>
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tag">
+  <h3 class="title">标签</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/JavaScript/">JavaScript</a><small>1</small></li>
+  
+    <li><a href="/tags/PS/">PS</a><small>5</small></li>
+  
+    <li><a href="/tags/Python/">Python</a><small>1</small></li>
+  
+    <li><a href="/tags/转载/">转载</a><small>3</small></li>
+  
+  </ul>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2014 Norsie的博客
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>
