@@ -76,8 +76,9 @@ a:hover {
     width: 100%;
   }
 }
-@media screen and (max-width: 900px) {
+@media screen and (min-width: 900px) {
   .header-img {
+    height: 400px;
     background-image: url("/img/header.jpg");
   }
 }
