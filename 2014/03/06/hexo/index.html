@@ -7,7 +7,23 @@
   <meta name="author" content="Norsie的博客">
   
   <meta name="description" content="SAE的速度实在太慢，而且域名解析需要到国外中转，于是把博客迁移到GitHub以后会督促自己更新。
-等完全部署完毕会添加部署教程。">
+
+什么是Hexo，为什么选择Hexo：
+这次迁移和部署用到Hexo，hexo是一个基于Node.js的静态博客程序，可以方便的生成静态网页托管在github或者其他地方。有人对Hexo的评价是：
+
+A fast, simple &amp; powerful blog framework, powered by Node.js.
+
+选择Hexo的原因很多，包括快速方便，支持Markdown等，它的作者是这样评价它的：
+
+不可思议的快速 ─ 只要一眨眼静态文件即生成完成
+支持 Markdown
+仅需一道指令即可部署到 GitHub Pages 和 Heroku
+已移植 Octopress 插件
+高扩展性、自订性
+兼容于 Windows, Mac &amp; Linux
+
+总结来说，它和github推荐的Jekyll相比，简化了很多git命令，对于一个博客应用来说，这是很有必要的。另外，它很小巧、利于理解，你可以很方便的修改原文件，创建属于你自己的主题等。
+如何搭建Hexo">
   
   
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
@@ -60,8 +76,424 @@
     </header>
     <div class="entry">
       
-        <p><code>SAE</code>的速度实在太慢，而且域名解析需要到国外中转，于是把博客迁移到<code>GitHub</code>以后会督促自己更新。</p>
-<p>等完全部署完毕会添加部署教程。</p>
+        <blockquote>
+<p><code>SAE</code>的速度实在太慢，而且域名解析需要到国外中转，于是把博客迁移到<code>GitHub</code>以后会督促自己更新。</p>
+</blockquote>
+<h4 id="-hexo-hexo-">什么是Hexo，为什么选择Hexo：</h4>
+<p>这次迁移和部署用到Hexo，hexo是一个基于Node.js的静态博客程序，可以方便的生成静态网页托管在github或者其他地方。有人对Hexo的评价是：</p>
+<blockquote>
+<p>A fast, simple &amp; powerful blog framework, powered by Node.js.</p>
+</blockquote>
+<p>选择Hexo的原因很多，包括快速方便，支持Markdown等，它的作者是这样评价它的：</p>
+<blockquote>
+<p>不可思议的快速 ─ 只要一眨眼静态文件即生成完成
+支持 Markdown
+仅需一道指令即可部署到 GitHub Pages 和 Heroku
+已移植 Octopress 插件
+高扩展性、自订性
+兼容于 Windows, Mac &amp; Linux</p>
+</blockquote>
+<p>总结来说，它和github推荐的Jekyll相比，简化了很多git命令，对于一个博客应用来说，这是很有必要的。另外，它很小巧、利于理解，你可以很方便的修改原文件，创建属于你自己的主题等。</p>
+<h3 id="-hexo">如何搭建Hexo</h3>
+<p><a id="more"></a></p>
+<h4 id="-">环境以及安装</h4>
+<p>Hexo需要在包含<code>git</code>以及<code>Node.js</code>的环境下搭建，关于这两部分的搭建，请自行百度解决。</p>
+<p>当你具备了上述环境之后，你可以使用下面的命令，安装Hexo：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+</pre></td><td class="code"><pre>npm <span class="keyword">install</span> -g hexo
+</pre></td></tr></table></figure>
+
+<h4 id="-hexo">初始化你的Hexo</h4>
+<p>在你完成Hexo的安装之后，你需要选择一个目录来初始化你的网站。</p>
+<p>在你选择的目录下（例如：<code>H:\Web</code>）执行下面的命令：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+</pre></td><td class="code"><pre>hexo init
+</pre></td></tr></table></figure>
+
+<p>很快的，你就会发现你的网站初始化完成了，你可以在网站的目录下（例如：<code>H:\Web</code>）下执行下面的命令之后，在浏览器中输入<code>localhost:4000</code>查看你的网站。</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+</pre></td><td class="code"><pre>hexo generate
+hexo <span class="keyword">server</span>
+</pre></td></tr></table></figure>
+
+<p>到这里，你的网站就在本地建立好了。</p>
+<h4 id="-github-repository">拥有一个GitHub帐号，并且建立一个Repository</h4>
+<p>想要在Github上面部署你的网站，你需要拥有一个Github的帐号，并且建立一个名为<code>accountname.github.io</code>的repository，关于这一部分的教程，请自行google。</p>
+<h4 id="-">部署你的网站</h4>
+<p>在完成了上一步之后，我们就可以将本地的网站部署到GitHub上了。</p>
+<p>但是在这之前，我们需要做一点配置，这里只是为了部署，更加详细的配置请往下看。</p>
+<p>编辑目录下的<code>_config.yml</code>文件，找到<code>deploy</code>段落，填入相关信息。（XXX表示你的Github帐号）</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+</pre></td><td class="code"><pre><span class="label">deploy:</span>
+  type: github
+  repository: https://github<span class="preprocessor">.com</span>/XXX/XXX<span class="preprocessor">.github</span><span class="preprocessor">.io</span><span class="preprocessor">.git</span>
+  branch: master
+</pre></td></tr></table></figure>
+
+<p>然后在网站的目录下执行下面的命令：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+</pre></td><td class="code"><pre>hexo <span class="keyword">generate</span>
+hexo deploy
+</pre></td></tr></table></figure>
+
+<p>这两个命令很常用，你可以缩写成这样：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+</pre></td><td class="code"><pre>hexo d <span class="attribute">-g</span>
+</pre></td></tr></table></figure>
+
+<p>这里，如果提示你需要设置SSH，那么请移步<a href="https://help.github.com/articles/generating-ssh-keys" target="_blank">官方的SSH设置介绍</a></p>
+<p>到这里，你应该已经知道，所有的hexo命令都是需要在当前网站的主目录下执行的，例如<code>H:\Web</code>。</p>
+<p>下面这些事Hexo的命令缩写，记住它吧，很有用的。</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+</pre></td><td class="code"><pre>hexo g == hexo generate
+hexo d == hexo deploy
+hexo s == hexo <span class="keyword">server</span>
+hexo n == hexo <span class="keyword">new</span>
+</pre></td></tr></table></figure>
+
+<h4 id="hexo-">Hexo的配置</h4>
+<p>这里我们只将一些最基础的配置，分为两部分：<code>整站</code>和<code>主题</code></p>
+<h5 id="-">整站配置</h5>
+<p>整站的配置文件是<code>H:\Web\_config.yml</code></p>
+<p>打开之后，你会看到如下内容：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+</pre></td><td class="code"><pre><span class="preprocessor"># Hexo Configuration</span>
+<span class="preprocessor">## Docs: http://zespia.tw/hexo/docs/configuration.html</span>
+<span class="preprocessor">## Source: https://github.com/tommy351/hexo/</span>
+
+<span class="preprocessor"># Site</span>
+<span class="label">title:</span> Omii <span class="preprocessor">#站点名称，就是左上角看到的</span>
+<span class="label">subtitle:</span> 懂设计的码农 <span class="preprocessor">#副标题，站点名称下方位置</span>
+<span class="label">description:</span> <span class="preprocessor">#站点描述，一般是给搜索引擎看的</span>
+<span class="label">author:</span> Norsie的博客 <span class="preprocessor">#作者，左下角</span>
+<span class="label">email:</span> <span class="preprocessor">#联系邮箱</span>
+<span class="label">language:</span> <span class="built_in">zh</span>-CN <span class="preprocessor">#语言</span>
+
+<span class="preprocessor"># URL #如果你的网站在绑定了域名之后需要做一个sitemap，你需要配置该项，否则，请忽略。</span>
+<span class="preprocessor">## If your site is put in a subdirectory, set url as 'http://yoursite.com/child' and root as '/child/'</span>
+<span class="label">url:</span> http://yoursite<span class="preprocessor">.com</span>
+<span class="label">root:</span> /
+<span class="label">permalink:</span> :year/:month/:day/:title/
+<span class="label">tag_dir:</span> tags
+<span class="label">archive_dir:</span> archives
+<span class="label">category_dir:</span> categories
+<span class="label">code_dir:</span> downloads/code
+
+<span class="preprocessor"># Directory #一些目录设置，不需要改动</span>
+<span class="label">source_dir:</span> source
+<span class="label">public_dir:</span> public
+
+<span class="preprocessor"># Writing #写作格式，不需要改动</span>
+<span class="label">new_post_name:</span> :title<span class="preprocessor">.md</span> <span class="preprocessor"># File name of new posts</span>
+<span class="label">default_layout:</span> post
+<span class="label">auto_spacing:</span> false <span class="preprocessor"># Add spaces between asian characters and western characters</span>
+<span class="label">titlecase:</span> false <span class="preprocessor"># Transform title into titlecase</span>
+<span class="label">external_link:</span> true <span class="preprocessor"># Open external links in new tab</span>
+<span class="label">max_open_file:</span> <span class="number">100</span>
+<span class="label">multi_thread:</span> true
+<span class="label">filename_case:</span> <span class="number">0</span>
+<span class="label">render_drafts:</span> false
+<span class="label">post_asset_folder:</span> false
+<span class="label">highlight:</span>
+  enable: true
+  line_number: true
+  tab_replace:
+
+<span class="preprocessor"># Category & Tag #标签，不需要改动</span>
+<span class="label">default_category:</span> uncategorized
+<span class="label">category_map:</span>
+<span class="label">tag_map:</span>
+
+<span class="preprocessor"># Archives #文章的显示方式，0：全部隐藏，1：只列出标题，2：全部显示</span>
+<span class="preprocessor">## 2: Enable pagination</span>
+<span class="preprocessor">## 1: Disable pagination</span>
+<span class="preprocessor">## 0: Fully Disable</span>
+<span class="label">archive:</span> <span class="number">2</span>
+<span class="label">category:</span> <span class="number">2</span>
+<span class="label">tag:</span> <span class="number">1</span>
+
+<span class="preprocessor"># Server #不需要修改，如果你的端口被占用了，可以修改。</span>
+<span class="preprocessor">## Hexo uses Connect as a server</span>
+<span class="preprocessor">## You can customize the logger format as defined in</span>
+<span class="preprocessor">## http://www.senchalabs.org/connect/logger.html</span>
+<span class="label">port:</span> <span class="number">4000</span>
+<span class="label">logger:</span> false
+<span class="label">logger_format:</span>
+
+<span class="preprocessor"># Date / Time format #日期格式，不用修改</span>
+<span class="preprocessor">## Hexo uses Moment.js to parse and display date</span>
+<span class="preprocessor">## You can customize the date format as defined in</span>
+<span class="preprocessor">## http://momentjs.com/docs/#/displaying/format/</span>
+<span class="label">date_format:</span> MMM D YYYY
+<span class="label">time_format:</span> H:mm:ss
+
+<span class="preprocessor"># Pagination #每页显示的文章数</span>
+<span class="preprocessor">## Set per_page to 0 to disable pagination</span>
+<span class="label">per_page:</span> <span class="number">5</span> <span class="preprocessor">#每页显示的文章数</span>
+<span class="label">pagination_dir:</span> page
+
+<span class="preprocessor"># Disqus 评论插件</span>
+<span class="label">disqus_shortname:</span> 填入你在disqus中注册的名称，国内会被墙
+
+<span class="preprocessor"># Extensions #设置主题和插件</span>
+<span class="preprocessor">## Plugins: https://github.com/tommy351/hexo/wiki/Plugins</span>
+<span class="preprocessor">## Themes: https://github.com/tommy351/hexo/wiki/Themes</span>
+<span class="label">theme:</span> light <span class="preprocessor">#主题名称</span>
+<span class="label">exclude_generator:</span>
+<span class="label">plugins:</span> 
+- hexo-generator-feed <span class="preprocessor">#插件名称</span>
+
+<span class="preprocessor"># Markdown #Markdown的格式开关</span>
+<span class="preprocessor">## https://github.com/chjj/marked</span>
+<span class="label">markdown:</span>
+  gfm: true
+  pedantic: false
+  sanitize: false
+  tables: true
+  breaks: true
+  smartLists: true
+  smartypants: true
+
+<span class="preprocessor"># Deployment #部署到Github的配置信息</span>
+<span class="preprocessor">## Docs: http://zespia.tw/hexo/docs/deployment.html</span>
+<span class="label">deploy:</span>
+  type: github
+  repository: https://github<span class="preprocessor">.com</span>/duringlin/duringlin<span class="preprocessor">.github</span><span class="preprocessor">.io</span><span class="preprocessor">.git</span>
+  branch: master
+</pre></td></tr></table></figure>
+
+<h5 id="-">主题配置</h5>
+<p>Hexo有很多现成的主题，你可以到<a href="https://github.com/tommy351/hexo/wiki/Themes" target="_blank">官方主题站</a>查看和下载。下载之后，复制文件夹到<code>H:\Web\themes\</code>即可。</p>
+<p>主题的配置文件是<code>H:\Web\themes\light\_config.yml</code></p>
+<p>打开之后，你会看到如下内容：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+</pre></td><td class="code"><pre><span class="label">menu:</span> <span class="preprocessor">#菜单导航，位于右上角</span>
+  首页: /
+  文章: /archives
+
+<span class="label">widgets:</span> <span class="preprocessor">#组件，位于右侧</span>
+- category
+- tag
+
+<span class="label">excerpt_link:</span> Read More <span class="preprocessor">#阅读全文连接</span>
+
+<span class="label">twitter:</span> <span class="preprocessor">#twitter设置</span>
+  username:
+  show_replies: false
+  tweet_count: <span class="number">5</span>
+
+<span class="label">addthis:</span> <span class="preprocessor">#SNS的分享设置</span>
+  enable: false
+  pubid:
+  facebook: true
+  twitter: true
+  google: true
+  pinterest: true
+
+<span class="label">fancybox:</span> true <span class="preprocessor">#图片效果</span>
+
+<span class="label">google_analytics:</span> <span class="preprocessor">#google统计的id</span>
+<span class="label">rss:</span> <span class="preprocessor">#rss路径</span>
+</pre></td></tr></table></figure>
+
+<p>完成配置之后，你可以执行<code>generate</code>、<code>server</code>命令，然后再浏览器中查看修改后的网站。</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+</pre></td><td class="code"><pre>hexo g
+hexo s
+</pre></td></tr></table></figure>
+
+<p>也许你会发现没有变化，你可以使用<code>clean</code>命令更新。</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+</pre></td><td class="code"><pre>hexo clean
+</pre></td></tr></table></figure>
+
+<p>需要同步到Github，执行下面的命令</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+</pre></td><td class="code"><pre>hexo d <span class="attribute">-g</span>
+</pre></td></tr></table></figure>
+
+<h4 id="hexo-">Hexo的使用</h4>
+<p>配置都完成了，可以开始发表文章了。</p>
+<p>使用下面的命令，新建一篇文章：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+</pre></td><td class="code"><pre>hexo <span class="keyword">new</span> <span class="string">"title"</span>
+</pre></td></tr></table></figure>
+
+<p>你可以在<code>H:\Web\source\_posts</code>下找到这个文件，这是一个Markdown文件，建议你使用Markdown编辑器进行编辑。如果没有，推荐使用这个<a href="https://www.zybuluo.com/mdeditor" target="_blank">在线Markdown编辑器</a></p>
+<p>打开之后，显示的是如下内容：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+2
+3
+4
+5
+6
+</pre></td><td class="code"><pre>title: my <span class="built_in">new</span> <span class="built_in">post</span> <span class="comment">#文章标题</span>
+<span class="built_in">date</span>: <span class="number">2013</span>-<span class="number">05</span>-<span class="number">29</span> <span class="number">07</span>:<span class="number">56</span>:<span class="number">29</span> <span class="comment">#发表日期，一般不改动</span>
+categories: blog <span class="comment">#文章文类</span>
+tags: [博客，文章] <span class="comment">#文章标签，多于一项时用这种格式</span>
+<span class="comment">---</span>
+<span class="comment">#这里是正文，用markdown语法编写</span>
+</pre></td></tr></table></figure>
+
+<p>如果你需要使用图片，我们可以再<code>source</code>目录下新建一个<code>img</code>文件夹，图片放在里面，然后在文章里面引用就可以了。</p>
+<p>好了，文章已经完成了，你可以更新到远程端了。</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre>1
+</pre></td><td class="code"><pre>hexo d <span class="attribute">-g</span>
+</pre></td></tr></table></figure>
+
+<p>很简单吧！</p>
+<h4 id="-">优化</h4>
+<p>关于Hexo的优化技巧，网上有很多，自行Google吧~</p>
+<p>可以优化的项目：</p>
+<ul>
+<li>用“多说”替换默认的评论</li>
+<li>添加百度分享</li>
+<li>添加网站的小图标</li>
+<li>添加分类和标签云</li>
+<li>添加“关于”页面</li>
+<li>添加“RSS”</li>
+<li>添加“sitemap”</li>
+<li>添加百度统计</li>
+<li>绑定域名</li>
+</ul>
+<p>上面只是一些例子，你甚至可以修改主题，至于如何修改，就请自己动手寻找方法和尝试吧。</p>
 
       
     </div>
