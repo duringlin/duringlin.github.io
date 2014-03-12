@@ -79,10 +79,12 @@ a:hover {
 @media screen and (min-width: 900px) {
   .header-img {
     margin: 0 auto;
-    background-image: url("/img/header2.jpg");
+    background-image: url("/img/header3.jpg");
     background-repeat: no-repeat;
     padding: 0;
     border: 0;
+    width: 377px;
+    height: 346px;
   }
 }
 #main-col {
