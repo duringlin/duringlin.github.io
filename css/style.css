@@ -77,9 +77,9 @@ a:hover {
   }
 }
 @media screen and (min-width: 900px) {
-  .footer-img {
+  .header-img {
     height: 400px;
-    background-image: url("/img/header.jpg");
+    background-image: url("/img/header2.jpg");
   }
 }
 #main-col {
