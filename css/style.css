@@ -78,7 +78,7 @@ a:hover {
 }
 @media screen and (min-width: 900px) {
   .header-img {
-    height: 400px;
+    margin: 0 auto;
     background-image: url("/img/header2.jpg");
   }
 }
